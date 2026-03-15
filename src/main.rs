@@ -5,13 +5,14 @@ use std::sync::Arc;
 use axum::{Router, routing::get, serve};
 use rustls::crypto::ring::default_provider;
 
-use crate::modules::auth;
+use crate::modules::auth::{self, error::AuthError};
 mod config;
 
 #[derive(Clone, Debug)]
 pub struct AppState {
     pub pool: sqlx::postgres::PgPool,
     pub config: Arc<config::Config>,
+    pub http_client: reqwest::Client,
 }
 
 #[tokio::main]
@@ -23,8 +24,17 @@ async fn main() {
 
     let config = Arc::new(config::Config::from_env());
     let pool = db::connect(&config.database_url).await;
+    let http_client = reqwest::ClientBuilder::new()
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .map_err(|_| AuthError::FailedHttpClient)
+        .unwrap();
 
-    let state = AppState { pool, config };
+    let state = AppState {
+        pool,
+        config,
+        http_client,
+    };
 
     let app = Router::new()
         .route("/auth/google", get(auth::google_handler))

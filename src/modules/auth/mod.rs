@@ -11,10 +11,7 @@ use axum_extra::extract::{
     CookieJar,
     cookie::{Cookie, SameSite},
 };
-use oauth2::{
-    AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, Scope,
-    TokenResponse, TokenUrl, basic::BasicClient, reqwest,
-};
+
 use serde::Deserialize;
 use time::Duration;
 use uuid::Uuid;
@@ -33,26 +30,18 @@ pub struct CallbackQuery {
 pub async fn google_handler(
     State(state): State<AppState>,
     jar: CookieJar,
-) -> Result<(CookieJar, Redirect), String> {
-    let client = BasicClient::new(ClientId::new(state.config.google_client_id.clone()))
-        .set_client_secret(ClientSecret::new(state.config.google_client_secret.clone()))
-        .set_auth_uri(AuthUrl::new(state.config.google_auth_uri.clone()).unwrap())
-        .set_token_uri(TokenUrl::new(state.config.google_token_uri.clone()).unwrap())
-        .set_redirect_uri(RedirectUrl::new(state.config.google_redirect_uri.clone()).unwrap());
+) -> Result<(CookieJar, Redirect), AuthError> {
+    // generate the authorize url.
+    let (auth_url, csrf_token) = google::authorize_url(&state.config);
 
-    let (auth_url, csrf_token) = client
-        .authorize_url(CsrfToken::new_random)
-        .add_scope(Scope::new("openid".to_string()))
-        .add_scope(Scope::new("email".to_string()))
-        .add_scope(Scope::new("profile".to_string()))
-        .url();
-
-    let mut cookie = Cookie::new("oauth_state", csrf_token.secret().clone());
+    // store the csrf token in a cookie.
+    let mut cookie = Cookie::new("oauth_state", csrf_token);
     cookie.set_http_only(true);
     cookie.set_same_site(SameSite::Lax);
     cookie.set_max_age(Duration::minutes(5));
 
-    return Ok((jar.add(cookie), Redirect::to(auth_url.as_str())));
+    // redirect to the authorize url.
+    return Ok((jar.add(cookie), Redirect::to(&auth_url)));
 }
 
 pub async fn callback_handler(
@@ -60,36 +49,25 @@ pub async fn callback_handler(
     jar: CookieJar,
     Query(query): Query<CallbackQuery>,
 ) -> Result<(CookieJar, Redirect), AuthError> {
+    // get the csrf token from the cookie.
+
     let oauth_state = jar
         .get("oauth_state")
-        .map(|c| CsrfToken::new(c.value().to_owned()))
-        .ok_or(AuthError::MissingCookie)?;
+        .ok_or(AuthError::MissingCookie)?
+        .value()
+        .to_string();
 
-    if oauth_state.secret() != &query.state {
+    // verify the csrf token.
+    if oauth_state != query.state {
         return Err(AuthError::CsrfMismatch);
     }
 
-    let client = BasicClient::new(ClientId::new(state.config.google_client_id.clone()))
-        .set_client_secret(ClientSecret::new(state.config.google_client_secret.clone()))
-        .set_auth_uri(AuthUrl::new(state.config.google_auth_uri.clone()).unwrap())
-        .set_token_uri(TokenUrl::new(state.config.google_token_uri.clone()).unwrap())
-        .set_redirect_uri(RedirectUrl::new(state.config.google_redirect_uri.clone()).unwrap());
+    // exchange the code for a token.
+    let token_response =
+        google::exchange_code(&state.http_client, &query.code, &state.config).await?;
 
-    let http_client = reqwest::ClientBuilder::new()
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-        .map_err(|_| AuthError::FailedHttpClient)?;
-
-    println!("code: {}", &query.code);
-
-    let token_response = client
-        .exchange_code(AuthorizationCode::new(query.code))
-        .request_async(&http_client)
-        .await
-        .map_err(|_| AuthError::FailedToExchangeToken)?;
-
-    let access_token = token_response.access_token();
-    let userinfo = fetch_userinfo(&http_client, access_token.secret()).await?;
+    let access_token = token_response.access_token;
+    let userinfo = fetch_userinfo(&state.http_client, &access_token).await?;
 
     println!("{:?}", userinfo);
 
@@ -98,7 +76,7 @@ pub async fn callback_handler(
         "INSERT INTO users (google_id, name, email, picture)
             VALUES ($1, $2, $3, $4)
             ON CONFLICT (google_id)
-            DO UPDATE SET 
+            DO UPDATE SET
                 name = EXCLUDED.name,
                 picture = EXCLUDED.picture
             RETURNING id;",

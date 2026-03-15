@@ -1,6 +1,7 @@
 use axum::response::IntoResponse;
 use reqwest::StatusCode;
 
+#[derive(Debug)]
 pub enum AuthError {
     CsrfMismatch,
     MissingCookie,
