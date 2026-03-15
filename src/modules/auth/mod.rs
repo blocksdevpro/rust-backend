@@ -66,7 +66,7 @@ pub async fn callback_handler(
         .ok_or(AuthError::MissingCookie)?;
 
     if oauth_state.secret() != &query.state {
-        AuthError::CsrfMismatch;
+        return Err(AuthError::CsrfMismatch);
     }
 
     let client = BasicClient::new(ClientId::new(state.config.google_client_id.clone()))
