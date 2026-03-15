@@ -1,11 +1,12 @@
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::{config::Config, modules::auth::error::AuthError};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JwtPayload {
-    pub sub: String,   // user's UUID from your DB (not google_id)
+    pub sub: Uuid,     // user's UUID from your DB (not google_id)
     pub email: String, // handy to have without a DB lookup
     pub iat: usize,    // issued at (unix timestamp)
     pub exp: usize,    // expiry (unix timestamp)
@@ -19,10 +20,10 @@ pub fn decode_token(token: &str, config: &Config) -> Result<JwtPayload, AuthErro
         &Validation::new(Algorithm::HS256),
     );
 
-    return match decoded {
+    match decoded {
         Ok(decoded) => Ok(decoded.claims),
         Err(_) => Err(AuthError::InvalidToken),
-    };
+    }
 }
 
 pub fn encode_token(payload: &JwtPayload, config: &Config) -> Result<String, AuthError> {
@@ -32,8 +33,8 @@ pub fn encode_token(payload: &JwtPayload, config: &Config) -> Result<String, Aut
         &EncodingKey::from_secret(config.jwt_secret.as_ref()),
     );
 
-    return match token {
+    match token {
         Ok(token) => Ok(token),
         Err(_) => Err(AuthError::InvalidToken),
-    };
+    }
 }

@@ -6,7 +6,10 @@ use axum::{Router, routing::get, serve};
 use rustls::crypto::ring::default_provider;
 use tower_http::trace::TraceLayer;
 
-use crate::modules::auth::{self, error::AuthError};
+use crate::modules::{
+    auth::{self, error::AuthError},
+    users::{get_user_handler, get_users_handler},
+};
 mod config;
 
 #[derive(Clone, Debug)]
@@ -49,7 +52,9 @@ async fn main() {
     let app = Router::new()
         .route("/auth/google", get(auth::google_handler))
         .route("/auth/callback", get(auth::callback_handler))
-        .route("/auth/dashboard", get(auth::dashboard_handler))
+        .route("/auth/me", get(auth::get_self_handler))
+        .route("/users", get(get_users_handler))
+        .route("/users/{id}", get(get_user_handler))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

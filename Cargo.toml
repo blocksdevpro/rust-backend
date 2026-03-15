@@ -12,17 +12,18 @@ sqlx = { version = "0.8", features = [
     "macros",
     "runtime-tokio-rustls",
     "uuid",
+    "time",
 ] }
 axum-extra = { version = "0.12.5", features = ["cookie"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 dotenvy = "0.15.7"
-time = "0.3.47"
+time = { version = "0.3.47", features = ["serde"] }
 reqwest = { version = "0.12.28", features = ["json"] }
 rustls = { version = "0.23", features = ["ring"] }
 thiserror = "2.0.18"
 jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
-uuid = { version = "1.22.0", features = ["v4"] }
+uuid = { version = "1.22.0", features = ["serde", "v4"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 tower-http = { version = "0.6.8", features = ["trace"] }

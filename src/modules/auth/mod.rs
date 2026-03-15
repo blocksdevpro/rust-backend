@@ -18,7 +18,10 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
-    modules::auth::{error::AuthError, google::fetch_userinfo, jwt::JwtPayload},
+    modules::{
+        auth::error::AuthError,
+        users::model::{User, UserResponse},
+    },
 };
 
 #[derive(Deserialize)]
@@ -41,7 +44,7 @@ pub async fn google_handler(
     cookie.set_max_age(Duration::minutes(5));
 
     // redirect to the authorize url.
-    return Ok((jar.add(cookie), Redirect::to(&auth_url)));
+    Ok((jar.add(cookie), Redirect::to(&auth_url)))
 }
 
 pub async fn callback_handler(
@@ -67,7 +70,7 @@ pub async fn callback_handler(
         google::exchange_code(&state.http_client, &query.code, &state.config).await?;
 
     let access_token = token_response.access_token;
-    let userinfo = fetch_userinfo(&state.http_client, &access_token).await?;
+    let userinfo = google::fetch_userinfo(&state.http_client, &access_token).await?;
 
     // insert user in db and retrieve their id.
     let user_id = sqlx::query_scalar::<_, Uuid>(
@@ -90,7 +93,7 @@ pub async fn callback_handler(
     let current_time = time::OffsetDateTime::now_utc().unix_timestamp() as usize;
 
     let payload = jwt::JwtPayload {
-        sub: user_id.to_string(),
+        sub: user_id,
         email: userinfo.email,
         iat: current_time,
         exp: current_time + (state.config.jwt_expiration * 60 * 60) as usize,
@@ -104,21 +107,31 @@ pub async fn callback_handler(
     cookie.set_same_site(SameSite::Lax);
     cookie.set_max_age(Duration::hours(24));
 
-    return Ok((
+    Ok((
         jar.remove(Cookie::from("oauth_state")).add(cookie),
         Redirect::to("http://localhost:8080/auth/dashboard"),
-    ));
+    ))
 }
 
-pub async fn dashboard_handler(
+pub async fn get_self_handler(
     State(state): State<AppState>,
     jar: CookieJar,
-) -> Result<Json<JwtPayload>, AuthError> {
+) -> Result<Json<UserResponse>, AuthError> {
     let token = jar
         .get("access_token")
         .map(|c| c.value().to_string())
         .ok_or(AuthError::MissingCookie)?;
 
     let payload = jwt::decode_token(&token, &state.config)?;
-    return Ok(Json(payload));
+
+    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
+        .bind(payload.sub)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to fetch user, Err: {}", e);
+            AuthError::InvalidToken
+        })?;
+
+    Ok(Json(UserResponse::from(user)))
 }
