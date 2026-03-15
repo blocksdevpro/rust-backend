@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
-    modules::auth::{google::fetch_userinfo, jwt::JwtPayload},
+    modules::auth::{error::AuthError, google::fetch_userinfo, jwt::JwtPayload},
 };
 
 #[derive(Deserialize)]
@@ -59,14 +59,14 @@ pub async fn callback_handler(
     State(state): State<AppState>,
     jar: CookieJar,
     Query(query): Query<CallbackQuery>,
-) -> Result<(CookieJar, Redirect), String> {
+) -> Result<(CookieJar, Redirect), AuthError> {
     let oauth_state = jar
         .get("oauth_state")
         .map(|c| CsrfToken::new(c.value().to_owned()))
-        .ok_or("missing oauth_state cookie")?;
+        .ok_or(AuthError::MissingCookie)?;
 
     if oauth_state.secret() != &query.state {
-        return Err("CSRF state mismatch".to_string());
+        AuthError::CsrfMismatch;
     }
 
     let client = BasicClient::new(ClientId::new(state.config.google_client_id.clone()))
@@ -78,7 +78,7 @@ pub async fn callback_handler(
     let http_client = reqwest::ClientBuilder::new()
         .redirect(reqwest::redirect::Policy::none())
         .build()
-        .expect("Failed to build HTTP client");
+        .map_err(|_| AuthError::FailedHttpClient)?;
 
     println!("code: {}", &query.code);
 
@@ -86,7 +86,7 @@ pub async fn callback_handler(
         .exchange_code(AuthorizationCode::new(query.code))
         .request_async(&http_client)
         .await
-        .map_err(|e| format!("Failed to exchange the auth-code. Error: {}", e))?;
+        .map_err(|_| AuthError::FailedToExchangeToken)?;
 
     let access_token = token_response.access_token();
     let userinfo = fetch_userinfo(&http_client, access_token.secret()).await?;
@@ -109,7 +109,7 @@ pub async fn callback_handler(
     .bind(&userinfo.picture)
     .fetch_one(&state.pool)
     .await
-    .map_err(|_| "Failed to upsert user in db")?;
+    .map_err(|_| AuthError::FailedToUpsertUser)?;
 
     let current_time = time::OffsetDateTime::now_utc().unix_timestamp() as usize;
 
@@ -137,11 +137,11 @@ pub async fn callback_handler(
 pub async fn dashboard_handler(
     State(state): State<AppState>,
     jar: CookieJar,
-) -> Result<Json<JwtPayload>, String> {
+) -> Result<Json<JwtPayload>, AuthError> {
     let token = jar
         .get("access_token")
         .map(|c| c.value().to_string())
-        .ok_or("missing access token")?;
+        .ok_or(AuthError::MissingCookie)?;
 
     let payload = jwt::decode_token(&token, &state.config)?;
     return Ok(Json(payload));

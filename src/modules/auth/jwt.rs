@@ -1,7 +1,7 @@
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 
-use crate::config::Config;
+use crate::{config::Config, modules::auth::error::AuthError};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JwtPayload {
@@ -12,7 +12,7 @@ pub struct JwtPayload {
     pub jti: String,   // unique token ID (for revocation later)
 }
 
-pub fn decode_token(token: &str, config: &Config) -> Result<JwtPayload, String> {
+pub fn decode_token(token: &str, config: &Config) -> Result<JwtPayload, AuthError> {
     let decoded = jsonwebtoken::decode::<JwtPayload>(
         token,
         &DecodingKey::from_secret(config.jwt_secret.as_ref()),
@@ -21,11 +21,11 @@ pub fn decode_token(token: &str, config: &Config) -> Result<JwtPayload, String> 
 
     return match decoded {
         Ok(decoded) => Ok(decoded.claims),
-        Err(e) => Err(e.to_string()),
+        Err(_) => Err(AuthError::InvalidToken),
     };
 }
 
-pub fn encode_token(payload: &JwtPayload, config: &Config) -> Result<String, String> {
+pub fn encode_token(payload: &JwtPayload, config: &Config) -> Result<String, AuthError> {
     let token = jsonwebtoken::encode(
         &Header::new(Algorithm::HS256),
         payload,
@@ -34,6 +34,6 @@ pub fn encode_token(payload: &JwtPayload, config: &Config) -> Result<String, Str
 
     return match token {
         Ok(token) => Ok(token),
-        Err(e) => Err(e.to_string()),
+        Err(_) => Err(AuthError::InvalidToken),
     };
 }
