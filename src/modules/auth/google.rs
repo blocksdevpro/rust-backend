@@ -52,7 +52,7 @@ pub async fn exchange_code(
         .send()
         .await
         .map_err(|e| {
-            println!("Token exchange request failed: {:#?}", e);
+            tracing::error!("Token exchange request failed: {:#?}", e);
             AuthError::FailedToExchangeToken
         })?;
 
@@ -62,16 +62,15 @@ pub async fn exchange_code(
             .text()
             .await
             .unwrap_or_else(|_| "<unreadable body>".to_string());
-        println!("Token exchange failed — status: {}, body: {}", status, body);
+        tracing::error!("Token exchange failed — status: {}, body: {}", status, body);
         return Err(AuthError::FailedToExchangeToken);
     }
 
     let res = response.json::<GoogleTokenResponse>().await.map_err(|e| {
-        println!("Failed to deserialize token response: {:#?}", e);
+        tracing::error!("Failed to deserialize token response: {:#?}", e);
         AuthError::FailedToExchangeToken
     })?;
 
-    println!("\n\nJson: {:#?}\n\n", res);
     Ok(res)
 }
 

@@ -69,8 +69,6 @@ pub async fn callback_handler(
     let access_token = token_response.access_token;
     let userinfo = fetch_userinfo(&state.http_client, &access_token).await?;
 
-    println!("{:?}", userinfo);
-
     // insert user in db and retrieve their id.
     let user_id = sqlx::query_scalar::<_, Uuid>(
         "INSERT INTO users (google_id, name, email, picture)

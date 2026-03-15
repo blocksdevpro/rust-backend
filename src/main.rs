@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use axum::{Router, routing::get, serve};
 use rustls::crypto::ring::default_provider;
+use tower_http::trace::TraceLayer;
 
 use crate::modules::auth::{self, error::AuthError};
 mod config;
@@ -17,10 +18,18 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() {
+    // load dotenv.
     dotenvy::dotenv().ok();
+
+    // install default crypto provider.
     default_provider()
         .install_default()
         .expect("Failed to install default crypto provider;");
+
+    // setup tracing.
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
 
     let config = Arc::new(config::Config::from_env());
     let pool = db::connect(&config.database_url).await;
@@ -36,15 +45,18 @@ async fn main() {
         http_client,
     };
 
+    // setup & register routes.
     let app = Router::new()
         .route("/auth/google", get(auth::google_handler))
         .route("/auth/callback", get(auth::callback_handler))
         .route("/auth/dashboard", get(auth::dashboard_handler))
+        .layer(TraceLayer::new_for_http())
         .with_state(state);
 
+    // start the server.
     let listener = tokio::net::TcpListener::bind("127.0.0.1:8080")
         .await
         .unwrap();
-    println!("Listening on http://127.0.0.1:8080");
+    tracing::info!("Listening on http://127.0.0.1:8080");
     serve(listener, app).await.unwrap();
 }
