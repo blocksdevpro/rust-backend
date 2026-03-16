@@ -23,13 +23,16 @@ CREATE TABLE IF NOT EXISTS users (
     picture TEXT,
 
     created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-
+    updated_at TIMESTAMPTZ DEFAULT NULL
 );
 
 -- 4. Attach update_updated_at_column fn to users table;
 
-CREATE TRIGGER set_updated_at
+CREATE OR REPLACE TRIGGER set_updated_at
 BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+-- -- 5. Index on google_id
+CREATE INDEX IF NOT EXISTS idx_users_name ON users(name);
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);

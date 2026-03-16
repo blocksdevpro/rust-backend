@@ -88,7 +88,10 @@ pub async fn callback_handler(
     .bind(&userinfo.picture)
     .fetch_one(&state.pool)
     .await
-    .map_err(|_| AuthError::FailedToUpsertUser)?;
+    .map_err(|e| {
+        tracing::error!("Failed to upsert user, Err: {}", e);
+        AuthError::FailedToUpsertUser
+    })?;
 
     let current_time = time::OffsetDateTime::now_utc().unix_timestamp() as usize;
 
