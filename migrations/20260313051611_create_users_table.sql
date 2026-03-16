@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
     picture TEXT,
 
     created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT NULL
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- 4. Attach update_updated_at_column fn to users table;
@@ -33,6 +33,6 @@ BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
--- -- 5. Index on google_id
+-- 5. Indexes;
 CREATE INDEX IF NOT EXISTS idx_users_name ON users(name);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);

@@ -12,7 +12,7 @@ pub struct User {
     pub email: String,
     pub picture: Option<String>,
     pub created_at: OffsetDateTime,
-    pub updated_at: Option<OffsetDateTime>,
+    pub updated_at: OffsetDateTime,
 }
 
 #[derive(Serialize)]
