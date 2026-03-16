@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- 4. Attach update_updated_at_column fn to users table;
 
-CREATE OR REPLACE TRIGGER set_updated_at
+CREATE OR REPLACE TRIGGER set_users_updated_at
 BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
