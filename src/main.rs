@@ -1,16 +1,18 @@
+mod config;
 mod db;
+mod error;
 mod modules;
 use std::sync::Arc;
 
-use axum::{Router, routing::get, serve};
+use axum::{Router, serve};
 use rustls::crypto::ring::default_provider;
 use tower_http::trace::TraceLayer;
 
 use crate::modules::{
-    auth::{self, error::AuthError},
-    users::{get_user_handler, get_users_handler},
+    auth::{error::AuthError, router as auth_router},
+    meals::router as meals_router,
+    users::router as users_router,
 };
-mod config;
 
 #[derive(Clone, Debug)]
 pub struct AppState {
@@ -50,11 +52,9 @@ async fn main() {
 
     // setup & register routes.
     let app = Router::new()
-        .route("/auth/google", get(auth::google_handler))
-        .route("/auth/callback", get(auth::callback_handler))
-        .route("/auth/me", get(auth::get_self_handler))
-        .route("/users", get(get_users_handler))
-        .route("/users/{id}", get(get_user_handler))
+        .merge(auth_router())
+        .merge(users_router())
+        .merge(meals_router())
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

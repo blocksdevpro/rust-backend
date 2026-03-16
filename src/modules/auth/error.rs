@@ -1,5 +1,6 @@
-use axum::response::IntoResponse;
+use axum::{Json, response::IntoResponse};
 use reqwest::StatusCode;
+use serde_json::json;
 
 #[derive(Debug)]
 pub enum AuthError {
@@ -18,7 +19,7 @@ pub enum AuthError {
 
 impl IntoResponse for AuthError {
     fn into_response(self) -> axum::response::Response {
-        let (status, error_message) = match self {
+        let (status, message) = match self {
             AuthError::CsrfMismatch => (StatusCode::FORBIDDEN, "CSRF state mismatch"),
             AuthError::MissingCookie => (StatusCode::UNAUTHORIZED, "Missing cookie"),
             AuthError::FailedHttpClient => (
@@ -36,6 +37,6 @@ impl IntoResponse for AuthError {
             AuthError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid token"),
         };
 
-        (status, error_message).into_response()
+        (status, Json(json!({"error": message}))).into_response()
     }
 }

@@ -3,9 +3,10 @@ pub mod google;
 pub mod jwt;
 
 use axum::{
-    Json,
+    Json, Router,
     extract::{Query, State},
     response::Redirect,
+    routing::get,
 };
 use axum_extra::extract::{
     CookieJar,
@@ -30,7 +31,7 @@ pub struct CallbackQuery {
     pub state: String,
 }
 
-pub async fn google_handler(
+async fn google_handler(
     State(state): State<AppState>,
     jar: CookieJar,
 ) -> Result<(CookieJar, Redirect), AuthError> {
@@ -47,7 +48,7 @@ pub async fn google_handler(
     Ok((jar.add(cookie), Redirect::to(&auth_url)))
 }
 
-pub async fn callback_handler(
+async fn callback_handler(
     State(state): State<AppState>,
     jar: CookieJar,
     Query(query): Query<CallbackQuery>,
@@ -116,7 +117,7 @@ pub async fn callback_handler(
     ))
 }
 
-pub async fn get_self_handler(
+async fn get_self_handler(
     State(state): State<AppState>,
     jar: CookieJar,
 ) -> Result<Json<UserResponse>, AuthError> {
@@ -137,4 +138,11 @@ pub async fn get_self_handler(
         })?;
 
     Ok(Json(UserResponse::from(user)))
+}
+
+pub fn router() -> Router<AppState> {
+    Router::<AppState>::new()
+        .route("/auth/google", get(google_handler))
+        .route("/auth/callback", get(callback_handler))
+        .route("/auth/me", get(get_self_handler))
 }
