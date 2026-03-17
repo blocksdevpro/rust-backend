@@ -5,6 +5,8 @@ use serde_json::json;
 pub enum AppError {
     BadRequest(Option<String>),
     ItemNotFound(Option<String>),
+    Unauthorized(Option<String>),
+    InternalServerError(Option<String>),
 }
 
 impl IntoResponse for AppError {
@@ -17,6 +19,14 @@ impl IntoResponse for AppError {
             AppError::ItemNotFound(msg) => (
                 StatusCode::NOT_FOUND,
                 msg.unwrap_or("Item not found.".to_string()),
+            ),
+            AppError::Unauthorized(msg) => (
+                StatusCode::UNAUTHORIZED,
+                msg.unwrap_or("Unauthorized.".to_string()),
+            ),
+            AppError::InternalServerError(msg) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                msg.unwrap_or("Internal server error.".to_string()),
             ),
         };
         (status, Json(json!({"error": message}))).into_response()

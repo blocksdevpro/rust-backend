@@ -20,12 +20,12 @@ CREATE TABLE IF NOT EXISTS meals (
     meal_type meal_type_enum NOT NULL,
     
     -- AI generated values;
-    fats NUMERIC(8,2) NOT NULL CHECK (fats >= 0),
-    carbs NUMERIC(8,2) NOT NULL CHECK (carbs >= 0),
-    fiber NUMERIC(8,2) NOT NULL CHECK (fiber >= 0),
-    protein NUMERIC(8,2) NOT NULL CHECK (protein >= 0),
-    calories NUMERIC(8,2) NOT NULL CHECK (calories >= 0),
-    confidence NUMERIC(8,2) NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
+    fats FLOAT4 NOT NULL CHECK (fats >= 0),
+    carbs FLOAT4 NOT NULL CHECK (carbs >= 0),
+    fiber FLOAT4 NOT NULL CHECK (fiber >= 0),
+    protein FLOAT4 NOT NULL CHECK (protein >= 0),
+    calories FLOAT4 NOT NULL CHECK (calories >= 0),
+    confidence FLOAT4 NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
 
     -- timestamps;
     created_at TIMESTAMPTZ DEFAULT now(),

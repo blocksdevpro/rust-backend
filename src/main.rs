@@ -14,6 +14,7 @@ use tower_http::trace::TraceLayer;
 use crate::modules::{
     auth::{error::AuthError, router as auth_router},
     meals::router as meals_router,
+    profiles::router as profiles_router,
     users::router as users_router,
 };
 
@@ -58,6 +59,7 @@ async fn main() {
         .merge(auth_router())
         .merge(users_router())
         .merge(meals_router())
+        .merge(profiles_router())
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

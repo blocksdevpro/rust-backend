@@ -10,6 +10,7 @@ pub async fn connect(database_url: &str) -> Pool<Postgres> {
         .connect_with(
             PgConnectOptions::from_str(database_url)
                 .expect("Invalid database URL")
+                // TODO: Remove this in production.
                 .statement_cache_capacity(0),
         )
         .await

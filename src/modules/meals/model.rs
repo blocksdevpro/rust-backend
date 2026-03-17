@@ -1,7 +1,7 @@
 use serde::Serialize;
 use sqlx::prelude::FromRow;
 use strum_macros::Display;
-use time::OffsetDateTime;
+use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use uuid::Uuid;
 
 #[derive(Debug, sqlx::Type, Display)]
@@ -20,12 +20,12 @@ pub struct Meal {
     pub name: String,
     pub picture: Option<String>,
     pub meal_type: MealType,
-    pub fats: f64,
-    pub carbs: f64,
-    pub fiber: f64,
-    pub protein: f64,
-    pub calories: f64,
-    pub confidence: f64,
+    pub fats: f32,
+    pub carbs: f32,
+    pub fiber: f32,
+    pub protein: f32,
+    pub calories: f32,
+    pub confidence: f32,
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,
 }
@@ -54,13 +54,13 @@ impl From<Meal> for MealResponse {
             picture: meal.picture,
             meal_type: meal.meal_type.to_string(),
 
-            fats: meal.fats as f32,
-            carbs: meal.carbs as f32,
-            fiber: meal.fiber as f32,
-            protein: meal.protein as f32,
-            calories: meal.calories as f32,
+            fats: meal.fats,
+            carbs: meal.carbs,
+            fiber: meal.fiber,
+            protein: meal.protein,
+            calories: meal.calories,
 
-            created_at: meal.created_at.to_string(),
+            created_at: meal.created_at.format(&Rfc3339).unwrap(),
         }
     }
 }

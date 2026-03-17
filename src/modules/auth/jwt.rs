@@ -47,6 +47,8 @@ pub fn set_access_token(jar: CookieJar, token: String) -> CookieJar {
         .http_only(true)
         .same_site(SameSite::Lax)
         .max_age(Duration::hours(24))
+        .path("/")
+        .secure(true)
         .build();
 
     jar.add(cookie)
