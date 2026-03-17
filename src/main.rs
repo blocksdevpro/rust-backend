@@ -1,3 +1,6 @@
+// TODO: remove this in production.
+#![allow(dead_code, unused_variables, unused_assignments)]
+
 mod config;
 mod db;
 mod error;

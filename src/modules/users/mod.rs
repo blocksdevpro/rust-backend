@@ -9,10 +9,7 @@ pub mod model;
 use crate::{
     AppState,
     error::AppError,
-    modules::{
-        auth::error::AuthError,
-        users::model::{User, UserResponse},
-    },
+    modules::users::model::{User, UserResponse},
 };
 
 async fn get_user_handler(

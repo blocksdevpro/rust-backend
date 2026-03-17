@@ -20,7 +20,7 @@ use uuid::Uuid;
 use crate::{
     AppState,
     modules::{
-        auth::error::AuthError,
+        auth::{error::AuthError, jwt::AuthUser},
         users::model::{User, UserResponse},
     },
 };
@@ -96,7 +96,7 @@ async fn callback_handler(
 
     let current_time = time::OffsetDateTime::now_utc().unix_timestamp() as usize;
 
-    let payload = jwt::JwtPayload {
+    let payload = jwt::Claims {
         sub: user_id,
         email: userinfo.email,
         iat: current_time,
@@ -106,30 +106,20 @@ async fn callback_handler(
     let token = jwt::encode_token(&payload, &state.config)?;
 
     // set the access token cookie.
-    let mut cookie = Cookie::new("access_token", token);
-    cookie.set_http_only(true);
-    cookie.set_same_site(SameSite::Lax);
-    cookie.set_max_age(Duration::hours(24));
+    let jar = jwt::set_access_token(jar, token.clone());
 
     Ok((
-        jar.remove(Cookie::from("oauth_state")).add(cookie),
-        Redirect::to("http://localhost:8080/auth/dashboard"),
+        jar.remove(Cookie::from("oauth_state")),
+        Redirect::to("http://localhost:8080/auth/me"),
     ))
 }
 
 async fn get_self_handler(
     State(state): State<AppState>,
-    jar: CookieJar,
+    AuthUser(user): AuthUser,
 ) -> Result<Json<UserResponse>, AuthError> {
-    let token = jar
-        .get("access_token")
-        .map(|c| c.value().to_string())
-        .ok_or(AuthError::MissingCookie)?;
-
-    let payload = jwt::decode_token(&token, &state.config)?;
-
     let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
-        .bind(payload.sub)
+        .bind(user.sub)
         .fetch_one(&state.pool)
         .await
         .map_err(|e| {

@@ -21,7 +21,7 @@ impl IntoResponse for AuthError {
     fn into_response(self) -> axum::response::Response {
         let (status, message) = match self {
             AuthError::CsrfMismatch => (StatusCode::FORBIDDEN, "CSRF state mismatch"),
-            AuthError::MissingCookie => (StatusCode::UNAUTHORIZED, "Missing cookie"),
+            AuthError::MissingCookie => (StatusCode::UNAUTHORIZED, "Missing access token cookie"),
             AuthError::FailedHttpClient => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Failed to build http client!",
