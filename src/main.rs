@@ -5,6 +5,7 @@ mod config;
 mod db;
 mod error;
 mod modules;
+mod storage;
 use std::sync::Arc;
 
 use axum::{Router, serve};
@@ -22,7 +23,8 @@ use crate::modules::{
 pub struct AppState {
     pub pool: sqlx::postgres::PgPool,
     pub config: Arc<config::Config>,
-    pub http_client: reqwest::Client,
+    pub http: reqwest::Client,
+    pub r2: aws_sdk_s3::Client,
 }
 
 #[tokio::main]
@@ -47,11 +49,13 @@ async fn main() {
         .build()
         .map_err(|_| AuthError::FailedHttpClient)
         .unwrap();
+    let r2_client = storage::create_r2_client(&config).await;
 
     let state = AppState {
         pool,
         config,
-        http_client,
+        http: http_client,
+        r2: r2_client,
     };
 
     // setup & register routes.

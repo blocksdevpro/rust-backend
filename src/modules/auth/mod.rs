@@ -67,11 +67,10 @@ async fn callback_handler(
     }
 
     // exchange the code for a token.
-    let token_response =
-        google::exchange_code(&state.http_client, &query.code, &state.config).await?;
+    let token_response = google::exchange_code(&state.http, &query.code, &state.config).await?;
 
     let access_token = token_response.access_token;
-    let userinfo = google::fetch_userinfo(&state.http_client, &access_token).await?;
+    let userinfo = google::fetch_userinfo(&state.http, &access_token).await?;
 
     // insert user in db and retrieve their id.
     let user_id = sqlx::query_scalar::<_, Uuid>(

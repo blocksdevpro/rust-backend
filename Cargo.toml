@@ -28,3 +28,5 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 tower-http = { version = "0.6.8", features = ["trace"] }
 strum_macros = "0.28.0"
+aws-config = "1.8.15"
+aws-sdk-s3 = "1.127.0"

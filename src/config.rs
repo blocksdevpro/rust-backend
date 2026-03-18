@@ -16,6 +16,12 @@ pub struct Config {
     pub jwt_secret: String,
     pub jwt_expiration: u32,
 
+    // cloudflare;
+    pub cf_r2_bucket: String,
+    pub cf_account_id: String,
+    pub cf_access_key: String,
+    pub cf_access_secret: String,
+
     // database credentials;
     pub database_url: String,
 }
@@ -39,6 +45,11 @@ impl Config {
                 .expect("JWT_EXPIRATION not found")
                 .parse()
                 .expect("JWT_EXPIRATION is not a valid number"),
+
+            cf_r2_bucket: env::var("CF_R2_BUCKET").expect("CF_R2_BUCKET not found"),
+            cf_account_id: env::var("CF_ACCOUNT_ID").expect("CF_ACCOUNT_ID not found"),
+            cf_access_key: env::var("CF_ACCESS_KEY").expect("CF_ACCESS_KEY not found"),
+            cf_access_secret: env::var("CF_ACCESS_SECRET").expect("CF_ACCESS_SECRET not found"),
             database_url: env::var("DATABASE_URL").expect("DATABASE_URL not found"),
         }
     }

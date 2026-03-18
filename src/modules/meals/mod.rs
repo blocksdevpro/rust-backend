@@ -17,11 +17,12 @@ use axum::{
 };
 use uuid::Uuid;
 
+const MAX_IMAGE_SIZE: usize = 10 * 1024 * 1024;
+
 pub struct ScanMealRequest {
     pub picture: Bytes,
 }
 
-#[axum::debug_handler]
 async fn get_meals_handler(
     State(state): State<AppState>,
     AuthUser(user): AuthUser,
@@ -56,10 +57,9 @@ async fn get_meal_handler(
     Ok(Json(MealResponse::from(meal)))
 }
 
-#[axum::debug_handler]
 async fn scan_meal_handler(
-    State(_state): State<AppState>,
-    AuthUser(_user): AuthUser,
+    State(state): State<AppState>,
+    AuthUser(user): AuthUser,
     mut multipart: Multipart,
 ) -> Result<(), AppError> {
     // TODO: handle the image.
@@ -85,8 +85,45 @@ async fn scan_meal_handler(
 
     let content_bytes =
         content_bytes.ok_or_else(|| AppError::BadRequest(Some("Image is required".to_string())))?;
+    let content_type = content_type
+        .ok_or_else(|| AppError::BadRequest(Some("Image content_type is required".to_string())))?;
 
-    // TEMP: save the file in cloudflare r2.
+    let content_ext = match content_type.as_str() {
+        "image/jpeg" => "jpg",
+        "image/png" => "png",
+        "image/webp" => "webp",
+        _ => {
+            return Err(AppError::BadRequest(Some(
+                "Unsupported image type".to_string(),
+            )));
+        }
+    };
+
+    if content_bytes.len() > MAX_IMAGE_SIZE {
+        return Err(AppError::BadRequest(Some(
+            "Image size is too large (max 10MB)".to_string(),
+        )));
+    }
+
+    // save the file in cloudflare r2.
+    let key = format!("meals/{}/{}.{}", user.sub, Uuid::new_v4(), content_ext);
+    state
+        .r2
+        .put_object()
+        .bucket(&state.config.cf_r2_bucket)
+        .key(&key)
+        .body(content_bytes.into())
+        .content_type(content_type)
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to upload object to R2 bucket, {}", e);
+            AppError::InternalServerError(Some(
+                "Failed to store image inside r2 bucket.".to_string(),
+            ))
+        })?;
+
+    println!("Saved image in {}", key);
 
     // TODO: implement scan meal handler.
 
