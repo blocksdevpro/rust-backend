@@ -2,11 +2,13 @@
 #![allow(dead_code, unused_variables, unused_assignments)]
 
 mod config;
-mod db;
+mod core;
 mod error;
 mod modules;
-mod storage;
 use std::sync::Arc;
+
+use crate::core::db;
+use crate::core::storage;
 
 use axum::{Router, serve};
 use rustls::crypto::ring::default_provider;
