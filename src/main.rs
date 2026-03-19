@@ -1,12 +1,12 @@
 // TODO: remove this in production.
 #![allow(dead_code, unused_variables, unused_assignments)]
 
-mod config;
 mod core;
 mod error;
 mod modules;
 use std::sync::Arc;
 
+use crate::core::config;
 use crate::core::db;
 use crate::core::storage;
 
@@ -27,6 +27,7 @@ pub struct AppState {
     pub config: Arc<config::Config>,
     pub http: reqwest::Client,
     pub r2: aws_sdk_s3::Client,
+    pub openai: async_openai::Client<async_openai::config::OpenAIConfig>,
 }
 
 #[tokio::main]
@@ -52,12 +53,14 @@ async fn main() {
         .map_err(|_| AuthError::FailedHttpClient)
         .unwrap();
     let r2_client = storage::create_r2_client(&config).await;
+    let openai_client = core::openai::create_openai_client(&config);
 
     let state = AppState {
         pool,
         config,
         http: http_client,
         r2: r2_client,
+        openai: openai_client,
     };
 
     // setup & register routes.

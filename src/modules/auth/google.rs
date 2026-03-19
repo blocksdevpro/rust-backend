@@ -24,12 +24,8 @@ pub fn authorize_url(config: &Config) -> (String, String) {
     let state = uuid::Uuid::new_v4().to_string();
 
     let url = format!(
-        "{}?client_id={}&redirect_uri={}&response_type=code&scope={}&state={}",
-        config.google_auth_uri,
-        config.google_client_id,
-        config.google_redirect_uri,
-        "email profile openid",
-        state
+        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope={}&state={}",
+        config.google_client_id, config.google_redirect_uri, "email profile openid", state
     );
 
     (url, state)

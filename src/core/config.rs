@@ -7,14 +7,15 @@ pub struct Config {
     pub google_client_secret: String,
 
     // google oauth2 uris;
-    pub google_auth_uri: String,
-    pub google_token_uri: String,
-    pub google_userinfo_uri: String,
     pub google_redirect_uri: String,
 
     // jwt credentials;
     pub jwt_secret: String,
     pub jwt_expiration: u32,
+
+    // openai credentials;
+    pub openai_api_key: String,
+    pub openai_base_url: String,
 
     // cloudflare;
     pub cf_r2_bucket: String,
@@ -33,10 +34,6 @@ impl Config {
             google_client_secret: env::var("GOOGLE_CLIENT_SECRET")
                 .expect("GOOGLE_CLIENT_SECRET not found"),
 
-            google_auth_uri: env::var("GOOGLE_AUTH_URI").expect("GOOGLE_AUTH_URI not found"),
-            google_token_uri: env::var("GOOGLE_TOKEN_URI").expect("GOOGLE_TOKEN_URI not found"),
-            google_userinfo_uri: env::var("GOOGLE_USERINFO_URI")
-                .expect("GOOGLE_USERINFO_URI not found"),
             google_redirect_uri: env::var("GOOGLE_REDIRECT_URI")
                 .expect("GOOGLE_REDIRECT_URI not found"),
 
@@ -45,6 +42,9 @@ impl Config {
                 .expect("JWT_EXPIRATION not found")
                 .parse()
                 .expect("JWT_EXPIRATION is not a valid number"),
+
+            openai_api_key: env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY not found"),
+            openai_base_url: env::var("OPENAI_BASE_URL").expect("OPENAI_BASE_URL not found"),
 
             cf_r2_bucket: env::var("CF_R2_BUCKET").expect("CF_R2_BUCKET not found"),
             cf_account_id: env::var("CF_ACCOUNT_ID").expect("CF_ACCOUNT_ID not found"),
