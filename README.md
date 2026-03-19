@@ -29,7 +29,7 @@ cargo install sqlx-cli --no-default-features --features postgres
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/your-username/rust-backend.git
+   git clone https://github.com/blocksdevpro/rust-backend.git
    cd rust-backend
    ```
 
@@ -97,12 +97,10 @@ cargo install cargo-watch
 cargo watch -x run
 ```
 
-Run tests:
-
-```bash
-cargo test
-```
-
 ## 📄 License
 
-MIT
+[MIT](LICENSE)
+
+```
+
+```
