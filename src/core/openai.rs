@@ -25,7 +25,7 @@ pub fn build_chat_completion_request(
     image_content: String,
 ) -> Result<CreateChatCompletionRequest, OpenAIError> {
     let request = CreateChatCompletionRequestArgs::default()
-        .model("openai/gpt-4o-mini")
+        .model("google/gemini-3.1-flash-lite-preview")
         .response_format(ResponseFormat::JsonObject)
         .messages(vec![
             ChatCompletionRequestMessage::System(ChatCompletionRequestSystemMessage {
