@@ -1,3 +1,4 @@
 /target
 *.env
 .rest-client
+endpoints.md

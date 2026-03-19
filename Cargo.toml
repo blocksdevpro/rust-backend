@@ -30,4 +30,5 @@ tower-http = { version = "0.6.8", features = ["trace"] }
 strum_macros = "0.28.0"
 aws-config = "1.8.15"
 aws-sdk-s3 = "1.127.0"
-async-openai = { version = "0.33.1", features = ["rustls", "_api"] }
+async-openai = { version = "0.33.1", features = ["rustls", "_api", "chat-completion"] }
+base64 = "0.22.1"

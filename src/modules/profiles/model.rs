@@ -78,11 +78,11 @@ pub struct ProfileResponse {
 }
 #[derive(Serialize)]
 pub struct TargetsResponse {
-    target_fats: f32,
-    target_fiber: f32,
-    target_carbs: f32,
-    target_protein: f32,
-    target_calories: f32,
+    pub target_fats: f32,
+    pub target_fiber: f32,
+    pub target_carbs: f32,
+    pub target_protein: f32,
+    pub target_calories: f32,
 }
 
 impl From<Profile> for ProfileResponse {

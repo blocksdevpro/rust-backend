@@ -1,10 +1,11 @@
+use serde::Deserialize;
 use serde::Serialize;
 use sqlx::prelude::FromRow;
 use strum_macros::Display;
 use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use uuid::Uuid;
 
-#[derive(Debug, sqlx::Type, Display)]
+#[derive(Debug, sqlx::Type, Display, Deserialize, Serialize)]
 #[sqlx(type_name = "meal_type_enum", rename_all = "lowercase")]
 pub enum MealType {
     Breakfast,

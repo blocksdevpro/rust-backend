@@ -14,7 +14,7 @@ use crate::{
     },
 };
 
-mod model;
+pub mod model;
 
 #[derive(Deserialize)]
 struct CreateProfileRequest {
