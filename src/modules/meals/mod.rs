@@ -163,7 +163,7 @@ async fn scan_meal_handler(
             AppError::ItemNotFound(Some("Profile not found.".to_string()))
         })?;
 
-    let target = target.map(|t| TargetsResponse::from(t));
+    let target = target.map(TargetsResponse::from);
 
     let user_prompt = prompts::build_user_scan_prompt(None, target.as_ref());
     let request = openai::build_chat_completion_request(
@@ -190,7 +190,7 @@ async fn scan_meal_handler(
                 "Failed to get chat completion response.".to_string(),
             ))
         })?;
-    let scan_response = serde_json::from_str::<ScanMealAIResponse>(&response).map_err(|e| {
+    let scan_response = serde_json::from_str::<ScanMealAIResponse>(response).map_err(|e| {
         tracing::error!("Failed to parse chat completion response: {}", e);
         AppError::InternalServerError(Some(
             "Failed to parse chat completion response.".to_string(),

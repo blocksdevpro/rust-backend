@@ -61,7 +61,7 @@ pub fn build_user_scan_prompt(label: Option<&str>, target: Option<&TargetsRespon
         .map(|l| USER_ADDITIONAL_TEXT_INPUT.replace("__LABEL__", l))
         .unwrap_or_default();
 
-    let target_context = target.map(|t| build_user_context(t)).unwrap_or_default();
+    let target_context = target.map(build_user_context).unwrap_or_default();
 
     SCAN_USER_PROMPT
         .replace("__USER_ADDITIONAL_TEXT_INPUT__", &label_context)

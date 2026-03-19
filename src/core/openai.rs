@@ -4,12 +4,10 @@ use async_openai::{
     config::OpenAIConfig,
     error::OpenAIError,
     types::chat::{
-        ChatCompletionRequestMessage, ChatCompletionRequestMessageContentPartImage,
-        ChatCompletionRequestMessageContentPartText, ChatCompletionRequestSystemMessage,
-        ChatCompletionRequestSystemMessageContent, ChatCompletionRequestUserMessage,
-        ChatCompletionRequestUserMessageContent, ChatCompletionRequestUserMessageContentPart,
-        CreateChatCompletionRequest, CreateChatCompletionRequestArgs, ImageDetail, ImageUrl,
-        ResponseFormat,
+        ChatCompletionRequestMessageContentPartImage, ChatCompletionRequestMessageContentPartText,
+        ChatCompletionRequestSystemMessage, ChatCompletionRequestUserMessage,
+        ChatCompletionRequestUserMessageContent, CreateChatCompletionRequest,
+        CreateChatCompletionRequestArgs, ImageDetail, ImageUrl, ResponseFormat,
     },
 };
 
@@ -18,38 +16,30 @@ pub fn create_openai_client(config: &Config) -> Client<OpenAIConfig> {
 
     Client::with_config(openai_config)
 }
-
 pub fn build_chat_completion_request(
     system_prompt: String,
     user_prompt: String,
     image_content: String,
 ) -> Result<CreateChatCompletionRequest, OpenAIError> {
-    let request = CreateChatCompletionRequestArgs::default()
+    CreateChatCompletionRequestArgs::default()
         .model("google/gemini-3.1-flash-lite-preview")
         .response_format(ResponseFormat::JsonObject)
         .messages(vec![
-            ChatCompletionRequestMessage::System(ChatCompletionRequestSystemMessage {
-                content: ChatCompletionRequestSystemMessageContent::Text(system_prompt),
-                name: None,
-            }),
-            ChatCompletionRequestMessage::User(ChatCompletionRequestUserMessage {
+            ChatCompletionRequestSystemMessage::from(system_prompt).into(),
+            ChatCompletionRequestUserMessage {
                 content: ChatCompletionRequestUserMessageContent::Array(vec![
-                    ChatCompletionRequestUserMessageContentPart::Text(
-                        ChatCompletionRequestMessageContentPartText { text: user_prompt },
-                    ),
-                    ChatCompletionRequestUserMessageContentPart::ImageUrl(
-                        ChatCompletionRequestMessageContentPartImage {
-                            image_url: ImageUrl {
-                                url: image_content,
-                                detail: Some(ImageDetail::High),
-                            },
+                    ChatCompletionRequestMessageContentPartText { text: user_prompt }.into(),
+                    ChatCompletionRequestMessageContentPartImage {
+                        image_url: ImageUrl {
+                            url: image_content,
+                            detail: Some(ImageDetail::High),
                         },
-                    ),
+                    }
+                    .into(),
                 ]),
                 name: None,
-            }),
+            }
+            .into(),
         ])
-        .build()?;
-
-    Ok(request)
+        .build()
 }
