@@ -41,10 +41,6 @@ pub struct ScanMealAIResponse {
     pub reasoning: String,
 }
 
-pub struct ScanMealRequest {
-    pub picture: Bytes,
-}
-
 async fn get_meals_handler(
     State(state): State<AppState>,
     AuthUser(user): AuthUser,
