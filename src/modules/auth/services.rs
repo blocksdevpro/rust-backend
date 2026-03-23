@@ -4,6 +4,7 @@ use axum_extra::extract::CookieJar;
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use reqwest::Url;
+use serde_json::{Value, json};
 use time::Duration;
 use uuid::Uuid;
 
@@ -186,7 +187,12 @@ impl AuthService {
 
         Ok((jar.add(cookie), Redirect::to(&url)))
     }
-    pub async fn logout() {}
+    pub async fn logout(&self, jar: CookieJar) -> Result<(CookieJar, Json<Value>), AppError> {
+        Ok((
+            jar.remove(Cookie::from("access_token")),
+            Json(json!({"message": "Logged out"})),
+        ))
+    }
     pub async fn callback(
         &self,
         jar: CookieJar,

@@ -3,6 +3,7 @@ use super::services::AuthService;
 use crate::{core::extractors::AuthUser, error::AppError, modules::usersv2::models::UserResponse};
 use axum::{Json, extract::Query, response::Redirect};
 use axum_extra::extract::CookieJar;
+use serde_json::Value;
 
 pub async fn login_handler(
     service: AuthService,
@@ -11,7 +12,12 @@ pub async fn login_handler(
     service.login(jar).await
 }
 
-pub async fn logout_handler() {}
+pub async fn logout_handler(
+    service: AuthService,
+    jar: CookieJar,
+) -> Result<(CookieJar, Json<Value>), AppError> {
+    service.logout(jar).await
+}
 
 pub async fn callback_handler(
     service: AuthService,
