@@ -2794,6 +2794,7 @@ dependencies = [
 name = "rust-backend"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-openai",
  "aws-config",
  "aws-sdk-s3",

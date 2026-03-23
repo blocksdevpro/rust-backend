@@ -1,18 +1,15 @@
-use sqlx::{
-    Pool, Postgres,
-    postgres::{PgConnectOptions, PgPoolOptions},
-};
-use std::str::FromStr;
+use std::time::Duration;
 
-pub async fn connect(database_url: &str) -> Pool<Postgres> {
+use sqlx::{Error, Pool, Postgres, postgres::PgPoolOptions};
+
+pub async fn connect(database_url: &str) -> Result<Pool<Postgres>, Error> {
     PgPoolOptions::new()
-        .max_connections(5)
-        .connect_with(
-            PgConnectOptions::from_str(database_url)
-                .expect("Invalid database URL")
-                // TODO: Remove this in production.
-                .statement_cache_capacity(0),
-        )
+        .max_connections(10)
+        .min_connections(2) // Keep warm connections
+        .acquire_timeout(Duration::from_secs(5))
+        .max_lifetime(Duration::from_secs(30 * 60)) // Recycle connections
+        .idle_timeout(Duration::from_secs(10 * 60))
+        .connect(database_url)
         .await
-        .expect("Failed to connect to database")
+        .inspect_err(|e| tracing::error!("Database connection failed: {}", e))
 }
