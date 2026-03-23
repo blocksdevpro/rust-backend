@@ -29,6 +29,15 @@ impl UserRepository {
         Ok(user)
     }
 
+    pub async fn find_all(&self) -> Result<Vec<User>, sqlx::Error> {
+        let users =
+            sqlx::query_as::<_, User>("SELECT * FROM users ORDER BY created_at DESC LIMIT 10")
+                .fetch_all(&self.pool)
+                .await?;
+
+        Ok(users)
+    }
+
     pub async fn create(
         &self,
         google_id: &str,

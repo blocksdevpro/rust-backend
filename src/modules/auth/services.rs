@@ -12,8 +12,8 @@ use crate::error::AppError;
 use crate::modules::auth::models::{
     JwtClaims, OAuthCallbackQuery, OAuthTokenResponse, OAuthUserInfoResponse,
 };
-use crate::modules::usersv2::models::UserResponse;
-use crate::modules::usersv2::repo::UserRepository;
+use crate::modules::users::models::UserResponse;
+use crate::modules::users::repo::UserRepository;
 use crate::state::AppState;
 
 const GOOGLE_AUTH_URL: &str = "https://accounts.google.com/o/oauth2/v2/auth";

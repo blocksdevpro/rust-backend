@@ -1,6 +1,6 @@
 use super::models::OAuthCallbackQuery;
 use super::services::AuthService;
-use crate::{core::extractors::AuthUser, error::AppError, modules::usersv2::models::UserResponse};
+use crate::{core::extractors::AuthUser, error::AppError, modules::users::models::UserResponse};
 use axum::{Json, extract::Query, response::Redirect};
 use axum_extra::extract::CookieJar;
 use serde_json::Value;

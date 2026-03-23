@@ -1,6 +1,7 @@
 use crate::error::AppError;
 use crate::modules::auth::models::JwtClaims;
 use crate::modules::auth::services::{AuthService, JwtService};
+use crate::modules::users::services::UserService;
 use crate::state::AppState;
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
@@ -46,5 +47,16 @@ impl FromRequestParts<AppState> for AuthService {
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         Ok(AuthService::new(state.clone()))
+    }
+}
+
+impl FromRequestParts<AppState> for UserService {
+    type Rejection = AppError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        Ok(UserService::new(state.clone()))
     }
 }
