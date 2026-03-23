@@ -1,9 +1,19 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Deserialize, Serialize)]
 pub struct JwtClaims {
-    pub sub: String,
-    pub email: String,
+    pub sub: Uuid,     // user's UUID from your DB (not google_id)
+    pub email: String, // handy to have without a DB lookup
+    pub iat: u64,      // issued at (unix timestamp)
+    pub exp: u64,      // expiry (unix timestamp)
+    pub jti: String,   // unique token ID (for revocation later)
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct OAuthCallbackQuery {
+    pub code: String,
+    pub state: String,
 }
 
 #[derive(Deserialize, Serialize)]

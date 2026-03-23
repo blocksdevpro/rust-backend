@@ -1,8 +1,8 @@
+use super::handlers;
+use crate::AppState;
 use axum::{Router, routing::get};
 
-use super::handlers;
-
-pub fn routes() -> Router {
+pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/auth/login", get(handlers::login_handler))
         .route("/auth/logout", get(handlers::logout_handler))

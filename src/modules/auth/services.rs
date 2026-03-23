@@ -1,9 +1,18 @@
+use axum::Json;
+use axum::response::Redirect;
+use axum_extra::extract::CookieJar;
+use axum_extra::extract::cookie::{Cookie, SameSite};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use reqwest::Url;
+use time::Duration;
+use uuid::Uuid;
 
-use crate::core::config::Config;
 use crate::error::AppError;
-use crate::modules::oauth::models::{JwtClaims, OAuthTokenResponse, OAuthUserInfoResponse};
+use crate::modules::auth::models::{
+    JwtClaims, OAuthCallbackQuery, OAuthTokenResponse, OAuthUserInfoResponse,
+};
+use crate::modules::usersv2::models::UserResponse;
+use crate::modules::usersv2::repo::UserRepository;
 use crate::state::AppState;
 
 const GOOGLE_AUTH_URL: &str = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -13,11 +22,23 @@ const GOOGLE_SCOPE: &str = "openid email profile";
 
 pub struct JwtService {
     secret: String,
+    expiration: u32,
 }
 
 impl JwtService {
-    pub fn new(secret: String) -> Self {
-        Self { secret }
+    pub fn new(secret: String, expiration: u32) -> Self {
+        Self { secret, expiration }
+    }
+
+    pub fn generate_claims(&self, user_id: Uuid, email: String) -> JwtClaims {
+        let iat = jsonwebtoken::get_current_timestamp() as u64;
+        JwtClaims {
+            sub: user_id,
+            email,
+            iat,
+            exp: iat + self.expiration as u64,
+            jti: uuid::Uuid::new_v4().to_string(),
+        }
     }
 
     pub fn encode(&self, payload: &JwtClaims) -> Result<String, AppError> {
@@ -135,15 +156,17 @@ impl GoogleOAuthService {
 }
 
 pub struct AuthService {
-    jwt_service: JwtService,
-    oauth_service: GoogleOAuthService,
+    jwt: JwtService,
+    users: UserRepository,
+    oauth: GoogleOAuthService,
 }
 
 impl AuthService {
     pub fn new(state: AppState) -> Self {
         Self {
-            jwt_service: JwtService::new(state.config.jwt_secret.clone()),
-            oauth_service: GoogleOAuthService::new(
+            jwt: JwtService::new(state.config.jwt_secret.clone(), state.config.jwt_expiration),
+            users: UserRepository::new(state.pool.clone()),
+            oauth: GoogleOAuthService::new(
                 state.http.clone(),
                 state.config.google_client_id.clone(),
                 state.config.google_client_secret.clone(),
@@ -152,8 +175,66 @@ impl AuthService {
         }
     }
 
-    pub async fn login() {}
+    pub async fn login(&self, jar: CookieJar) -> Result<(CookieJar, Redirect), AppError> {
+        let (url, state) = self.oauth.authorize_url()?;
+        let cookie = Cookie::build(("oauth_state", state))
+            .path("/")
+            .secure(true)
+            .http_only(true)
+            .same_site(SameSite::Lax)
+            .max_age(Duration::minutes(5));
+
+        Ok((jar.add(cookie), Redirect::to(&url)))
+    }
     pub async fn logout() {}
-    pub async fn callback() {}
-    pub async fn me() {}
+    pub async fn callback(
+        &self,
+        jar: CookieJar,
+        query: OAuthCallbackQuery,
+    ) -> Result<(CookieJar, Redirect), AppError> {
+        let state = jar
+            .get("oauth_state")
+            .ok_or(AppError::CsrfMismatch)?
+            .value()
+            .to_string();
+
+        if state != query.state {
+            Err(AppError::CsrfMismatch)?;
+        }
+
+        let token_response = self.oauth.exchange_code(&query.code).await?;
+        let userinfo = self.oauth.userinfo(&token_response.access_token).await?;
+
+        let user = self
+            .users
+            .upsert(
+                &userinfo.id,
+                &userinfo.name,
+                &userinfo.email,
+                userinfo.picture.as_deref(),
+            )
+            .await?;
+
+        let claims = self.jwt.generate_claims(user.id, user.email);
+        let token = self.jwt.encode(&claims)?;
+
+        let cookie = Cookie::build(("access_token", token))
+            .path("/")
+            .secure(true)
+            .http_only(true)
+            .same_site(SameSite::Lax)
+            .max_age(Duration::hours(24));
+
+        Ok((
+            jar.add(cookie).remove(Cookie::new("oauth_state", "")),
+            Redirect::to("http://localhost:8080/auth/me"),
+        ))
+    }
+    pub async fn me(&self, user: JwtClaims) -> Result<Json<UserResponse>, AppError> {
+        let user = self.users.find_by_id(user.sub).await?;
+
+        let user = user.ok_or(AppError::ItemNotFound(Some("User not found".to_string())))?;
+
+        Ok(Json(UserResponse::from(user)))
+    }
 }

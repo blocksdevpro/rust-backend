@@ -8,6 +8,7 @@ pub enum AppError {
     Unauthorized(Option<String>),
     InternalServerError(Option<String>),
     JwtError(String),
+    CsrfMismatch,
 }
 
 impl IntoResponse for AppError {
@@ -30,6 +31,7 @@ impl IntoResponse for AppError {
                 msg.unwrap_or("Internal server error.".to_string()),
             ),
             AppError::JwtError(msg) => (StatusCode::UNAUTHORIZED, msg),
+            AppError::CsrfMismatch => (StatusCode::FORBIDDEN, "Csrf mismatch".to_string()),
         };
         (status, Json(json!({"error": message}))).into_response()
     }

@@ -19,7 +19,7 @@ async fn main() {
 
     // ----------------- run setups ------------------------
     utils::tracing::setup_tracing();
-    utils::crypto::setup_crypto();
+    utils::crypto::setup_crypto().ok();
     // -----------------------------------------------------
 
     // ----------------- load config & state ---------------
@@ -29,6 +29,7 @@ async fn main() {
 
     // ----------------- setup server & start ----------------------
     let server = server::create_server(state);
+
     server::run_server(server).await;
     // -----------------------------------------------------
 }
