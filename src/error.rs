@@ -7,6 +7,7 @@ pub enum AppError {
     ItemNotFound(Option<String>),
     Unauthorized(Option<String>),
     InternalServerError(Option<String>),
+    JwtError(String),
 }
 
 impl IntoResponse for AppError {
@@ -28,6 +29,7 @@ impl IntoResponse for AppError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 msg.unwrap_or("Internal server error.".to_string()),
             ),
+            AppError::JwtError(msg) => (StatusCode::UNAUTHORIZED, msg),
         };
         (status, Json(json!({"error": message}))).into_response()
     }
