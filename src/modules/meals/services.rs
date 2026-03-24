@@ -160,7 +160,7 @@ impl MealService {
                 &state.config.cf_access_secret,
                 &state.config.cf_account_id,
                 &state.config.cf_r2_bucket,
-                &state.config.cf_r2_public_hash,
+                &state.config.cf_r2_public_url,
             ),
         }
     }

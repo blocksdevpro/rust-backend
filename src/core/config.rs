@@ -22,7 +22,7 @@ pub struct Config {
     pub cf_account_id: String,
     pub cf_access_key: String,
     pub cf_access_secret: String,
-    pub cf_r2_public_hash: String,
+    pub cf_r2_public_url: String,
 
     // database credentials;
     pub database_url: String,
@@ -51,7 +51,7 @@ impl Config {
             cf_account_id: env::var("CF_ACCOUNT_ID").expect("CF_ACCOUNT_ID not found"),
             cf_access_key: env::var("CF_ACCESS_KEY").expect("CF_ACCESS_KEY not found"),
             cf_access_secret: env::var("CF_ACCESS_SECRET").expect("CF_ACCESS_SECRET not found"),
-            cf_r2_public_hash: env::var("CF_R2_PUBLIC_HASH").expect("CF_R2_PUBLIC_HASH not found"),
+            cf_r2_public_url: env::var("CF_R2_PUBLIC_URL").expect("CF_R2_PUBLIC_URL not found"),
 
             database_url: env::var("DATABASE_URL").expect("DATABASE_URL not found"),
         }
