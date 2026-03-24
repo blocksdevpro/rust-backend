@@ -1,8 +1,9 @@
-use serde::Deserialize;
-use serde::Serialize;
-use sqlx::prelude::FromRow;
+use axum::body::Bytes;
+use axum_typed_multipart::{FieldData, TryFromMultipart};
+use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use strum_macros::Display;
-use time::{OffsetDateTime, format_description::well_known::Rfc3339};
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 #[derive(Debug, sqlx::Type, Display, Deserialize, Serialize)]
@@ -61,7 +62,30 @@ impl From<Meal> for MealResponse {
             protein: meal.protein,
             calories: meal.calories,
 
-            created_at: meal.created_at.format(&Rfc3339).unwrap(),
+            created_at: meal.created_at.to_string(),
         }
     }
+}
+
+#[derive(TryFromMultipart)]
+pub struct ScanMealRequest {
+    pub label: Option<String>,
+    #[form_data(limit = "2MB")]
+    pub image: FieldData<Bytes>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ScanMealAIResponse {
+    pub name: String,
+    pub description: String,
+    pub meal_type: MealType,
+
+    pub fats: f32,
+    pub carbs: f32,
+    pub fiber: f32,
+    pub protein: f32,
+    pub calories: f32,
+
+    pub confidence: f32,
+    pub reasoning: String,
 }

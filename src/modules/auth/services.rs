@@ -28,7 +28,10 @@ pub struct JwtService {
 
 impl JwtService {
     pub fn new(secret: String, expiration: u32) -> Self {
-        Self { secret, expiration }
+        Self {
+            secret,
+            expiration: expiration * 60 * 60,
+        }
     }
 
     pub fn generate_claims(&self, user_id: Uuid, email: String) -> JwtClaims {
@@ -232,7 +235,7 @@ impl AuthService {
             .max_age(Duration::hours(24));
 
         Ok((
-            jar.add(cookie).remove(Cookie::new("oauth_state", "")),
+            jar.remove(Cookie::from("oauth_state")).add(cookie),
             Redirect::to("http://localhost:8080/auth/me"),
         ))
     }
