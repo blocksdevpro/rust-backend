@@ -1,10 +1,9 @@
 use serde::Serialize;
 use sqlx::FromRow;
 use time::OffsetDateTime;
-use time::format_description::well_known::Rfc3339;
 use uuid::Uuid;
 
-#[derive(Debug, FromRow)]
+#[derive(FromRow)]
 pub struct User {
     pub id: Uuid,
     pub google_id: String,
@@ -31,7 +30,7 @@ impl From<User> for UserResponse {
             name: user.name,
             email: user.email,
             picture: user.picture,
-            created_at: user.created_at.format(&Rfc3339).unwrap(),
+            created_at: user.created_at.to_string(),
         }
     }
 }

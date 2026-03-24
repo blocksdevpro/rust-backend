@@ -1,4 +1,4 @@
-use crate::modules::profiles::model::TargetsResponse;
+use crate::modules::profiles::models::TargetsResponse;
 
 pub const SCAN_SYSTEM_PROMPT: &str = "You are a nutritional auditor. Your task is to reconcile visual data with user claims. Output ONLY valid JSON.";
 

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use strum_macros::Display;
-use time::{OffsetDateTime, format_description::well_known::Rfc3339};
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 #[derive(Debug, sqlx::Type, Display, Deserialize)]
@@ -102,7 +102,7 @@ impl From<Profile> for ProfileResponse {
             target_protein: profile.target_protein,
             target_calories: profile.target_calories,
 
-            created_at: profile.created_at.format(&Rfc3339).unwrap(),
+            created_at: profile.created_at.to_string(),
         }
     }
 }
@@ -117,4 +117,24 @@ impl From<Profile> for TargetsResponse {
             target_calories: profile.target_calories,
         }
     }
+}
+
+#[derive(Deserialize)]
+pub struct CreateProfileRequest {
+    pub age: i32,
+    pub height: i32,
+    pub weight: i32,
+    pub goal: Goal,
+    pub activity: Activity,
+    pub gender: Gender,
+}
+
+#[derive(Deserialize)]
+pub struct UpdateProfileRequest {
+    pub age: Option<i32>,
+    pub height: Option<i32>,
+    pub weight: Option<i32>,
+    pub goal: Option<Goal>,
+    pub activity: Option<Activity>,
+    pub gender: Option<Gender>,
 }

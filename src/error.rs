@@ -7,6 +7,8 @@ pub enum AppError {
     ItemNotFound(Option<String>),
     Unauthorized(Option<String>),
     InternalServerError(Option<String>),
+    JwtError(String),
+    CsrfMismatch,
 }
 
 impl IntoResponse for AppError {
@@ -28,7 +30,26 @@ impl IntoResponse for AppError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 msg.unwrap_or("Internal server error.".to_string()),
             ),
+            AppError::JwtError(msg) => (StatusCode::UNAUTHORIZED, msg),
+            AppError::CsrfMismatch => (StatusCode::FORBIDDEN, "Csrf mismatch".to_string()),
         };
         (status, Json(json!({"error": message}))).into_response()
+    }
+}
+
+impl From<sqlx::Error> for AppError {
+    fn from(error: sqlx::Error) -> Self {
+        tracing::error!("Database error:    {}", error);
+        match error {
+            sqlx::Error::RowNotFound => AppError::ItemNotFound(None),
+            _ => AppError::InternalServerError(Some("Database error.".into())),
+        }
+    }
+}
+
+impl From<serde_json::Error> for AppError {
+    fn from(error: serde_json::Error) -> Self {
+        tracing::error!("JSON error: {}", error);
+        AppError::InternalServerError(Some("Failed to parse response".into()))
     }
 }

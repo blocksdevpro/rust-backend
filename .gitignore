@@ -2,3 +2,4 @@
 *.env
 .rest-client
 endpoints.md
+create_module.sh
